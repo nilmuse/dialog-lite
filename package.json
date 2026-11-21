@@ -1,18 +1,18 @@
 {
   "name": "dialog-lite",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "DialogLite is designed to control a dialog box (modal window) on a web page, providing the functionality to open, close and apply custom styles through a simple interface.",
   "type": "module",
-  "author": "ux-ui.pro",
+  "author": "Maxim <m@nilmuse.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ux-ui-pro/dialog-lite.git"
+    "url": "git+https://github.com/nilmuse/dialog-lite.git"
   },
   "bugs": {
-    "url": "https://github.com/ux-ui-pro/dialog-lite/issues"
+    "url": "https://github.com/nilmuse/dialog-lite/issues"
   },
-  "homepage": "https://github.com/ux-ui-pro/dialog-lite",
+  "homepage": "https://github.com/nilmuse/dialog-lite",
   "sideEffects": [
     "*.css"
   ],
