@@ -1,220 +1,205 @@
 # dialog-lite
 
-A small TypeScript library for controlling accessible modal dialogs with plain DOM markup.
+Open and close modal dialogs built from your own DOM markup, with focus handling and scroll locking.
 
 [![npm](https://img.shields.io/npm/v/dialog-lite.svg?colorB=brightgreen)](https://www.npmjs.com/package/dialog-lite)
 [![NPM Downloads](https://img.shields.io/npm/dm/dialog-lite.svg?style=flat)](https://www.npmjs.com/package/dialog-lite)
 
 [Demo](https://codepen.io/ux-ui/pen/LYoLOjr)
 
----
-
-### Installation
+## Installation
 
 ```bash
 npm install dialog-lite
 ```
 
----
+## Quick start
 
-### Quick Start
-
-```ts
-import { initDialogLite } from 'dialog-lite'
-import 'dialog-lite/dialog-lite.css'
-
-const dialog = initDialogLite({
-  closingButton: true,
-  closingBackdrop: true,
-  injectCss: false,
-})
-
-button.addEventListener('click', () => {
-  dialog.open({ stylingClass: 'dialog-lite--result' })
-})
-```
-
-Use `hidden` for the initial hidden state. Do not rely on `style="display:none"`:
-the library toggles visibility through the `hidden` attribute.
+Add the trigger and dialog markup. Use `hidden` for the initial state: the controller toggles that attribute, so `style="display:none"` would keep the dialog hidden when opened.
 
 ```html
-<div class="dialog-lite dialog-lite--out" hidden aria-hidden="true">
+<main id="main-content">
+  <button id="open-dialog" type="button">Open dialog</button>
+</main>
+
+<div class="dialog-lite dialog-lite--out" hidden aria-hidden="true" aria-label="Example dialog">
   <div class="dialog-lite__backdrop"></div>
   <div class="dialog-lite__container">
     <div class="dialog-lite__container-inner">
       <button class="dialog-lite-close-button" type="button" aria-label="Close" tabindex="0">
         Close
       </button>
-      <div>Your content</div>
+      <p>Your content</p>
     </div>
   </div>
 </div>
 ```
 
----
-
-### API
-
-- `new DialogLite(options)` — creates a controller instance.
-- `init()` — resolves DOM elements and attaches event listeners.
-- `open(options)` — opens the dialog, toggles classes and attributes, and moves focus inside.
-- `close()` — closes the dialog, restores focus, and applies `hidden` after `hideDelayMs`.
-- `destroy()` — removes listeners, clears timers, and unlocks scroll.
-- `isOpened()` — returns the current controller open state.
-- `createDialogLite(options)` — creates a controller without calling `init()`.
-- `initDialogLite(options)` — optionally injects CSS, calls `init()`, and returns a controller.
-- `injectDialogLiteCss(options)` — injects the packaged CSS into `document` or a `ShadowRoot`.
-- `dialogLiteCssText` — packaged minified CSS string, useful for Shadow DOM.
-
-#### Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `closingButton` | `boolean` | `false` | Enables close on `.dialog-lite-close-button` click. |
-| `closingBackdrop` | `boolean` | `false` | Enables close on `.dialog-lite__backdrop` click. |
-| `dialog` | `HTMLElement \| string` | `'.dialog-lite'` | Dialog root element or selector. |
-| `mainContent` | `HTMLElement \| string \| null` | `'#main-content'` | Element or selector to set `aria-hidden` on while open. Set `null` to disable. |
-| `closeButtonSelector` | `string` | `'.dialog-lite-close-button'` | Close button selector inside the dialog. |
-| `backdropSelector` | `string` | `'.dialog-lite__backdrop'` | Backdrop selector inside the dialog. |
-| `debounceMs` | `number` | `500` | Debounce window for `open()` and `close()`. |
-| `hideDelayMs` | `number` | `500` | Delay before setting `hidden` on close. Should match CSS transitions. |
-| `focusOnOpenSelector` | `string` | `'[tabindex="0"]'` | Element to focus when opened. |
-| `lockScroll` | `boolean` | `true` | Locks page scroll while open. |
-| `trapFocus` | `boolean` | `true` | Enables Tab cycling inside the dialog. |
-| `closeOnEscape` | `boolean` | `true` | Enables closing the dialog with Escape. |
-| `role` | `string` | `'dialog'` | Dialog role applied during `init()`. |
-| `ariaModal` | `boolean` | `true` | Sets `aria-modal="true"` during `init()`. |
-| `emitEvents` | `boolean` | `true` | Emits `dialog-lite:open` and `dialog-lite:close`. |
-| `onOpen` | `(detail) => void` | - | Callback called after `open()`. |
-| `onClose` | `(detail) => void` | - | Callback called after `close()`. |
-
-#### Events
-
-- `dialog-lite:open` — dispatched on the dialog element after `open()`.
-  `event.detail` includes `{ stylingClass }`.
-- `dialog-lite:close` — dispatched on the dialog element after `close()`.
-
----
-
-### Vue 3
-
-`dialog-lite/vue` provides a Vue-scoped composable and a component wrapper. Vue is an
-optional peer dependency, so the default `dialog-lite` entry remains framework-agnostic.
-
-Import the CSS once in your app entry or global stylesheet:
+Run this in your browser entry point after the markup is available:
 
 ```ts
-import 'dialog-lite/dialog-lite.css'
+import { initDialogLite } from 'dialog-lite';
+import 'dialog-lite/dialog-lite.css';
+
+const dialog = initDialogLite({
+  closingButton: true,
+  closingBackdrop: true,
+  injectCss: false,
+});
+
+const button = document.querySelector<HTMLButtonElement>('#open-dialog');
+
+button?.addEventListener('click', () => {
+  dialog.open();
+});
 ```
 
-#### Composable
+The button opens the dialog. The close button, backdrop, and Escape key close it. Call `dialog.destroy()` when removing the dialog.
 
-Use `useDialogLite()` when you want to keep custom dialog markup.
+## API
+
+- `new DialogLite(options?)` and `createDialogLite(options?)` create a controller without initializing it.
+- `initDialogLite(options?)` injects CSS by default, calls `init()`, and returns a controller.
+- `injectDialogLiteCss(options?)` inserts or updates a style element in a document or shadow root. Its options are `target` (default `document`), `cssText` (default packaged CSS), and `id` (default `'dialog-lite-styles'`). It returns the style element.
+- `dialogLiteCssText` is the packaged minified CSS string.
+
+### Options
+
+These options apply to the constructor and both controller factories:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `closingButton` | `boolean` | `false` | Close on a matching close button's click. |
+| `closingBackdrop` | `boolean` | `false` | Close on a matching backdrop's click. |
+| `dialog` | `HTMLElement \| string` | `'.dialog-lite'` | Dialog root element or selector. |
+| `mainContent` | `HTMLElement \| string \| null` | `'#main-content'` | Element to set `aria-hidden` on while the dialog is open. See the note below about `null`. |
+| `closeButtonSelector` | `string` | `'.dialog-lite-close-button'` | Close button selector inside the dialog. |
+| `backdropSelector` | `string` | `'.dialog-lite__backdrop'` | Backdrop selector inside the dialog. |
+| `debounceMs` | `number` | `500` | Minimum interval between accepted `open()` and `close()` calls. |
+| `hideDelayMs` | `number` | `500` | Delay before applying `hidden` on close. Match it to your CSS transitions. |
+| `focusOnOpenSelector` | `string` | `'[tabindex="0"]'` | Element inside the dialog to focus on open. The root receives focus if no match is found. |
+| `lockScroll` | `boolean` | `true` | Lock page scroll while open. |
+| `trapFocus` | `boolean` | `true` | Cycle Tab focus inside the dialog. |
+| `closeOnEscape` | `boolean` | `true` | Close an open dialog with Escape. |
+| `role` | `string` | `'dialog'` | Role applied during `init()`. |
+| `ariaModal` | `boolean` | `true` | Apply `aria-modal="true"` during `init()`. |
+| `emitEvents` | `boolean` | `true` | Dispatch the DOM events listed below. Callbacks run regardless of this option. |
+| `onOpen` | `(detail: DialogLiteOpenDetail) => void` | `undefined` | Callback after an accepted `open()`. |
+| `onClose` | `(detail: DialogLiteCloseDetail) => void` | `undefined` | Callback after an accepted `close()`. |
+
+In the current implementation, `mainContent: null` falls back to `'#main-content'`, just like an omitted value. It does not disable background `aria-hidden` handling. If the selector matches no element, no background element is updated.
+
+`initDialogLite()` also accepts:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `injectCss` | `boolean` | `true` | Inject packaged CSS during initialization. Set `false` when importing the stylesheet yourself. |
+| `cssText` | `string` | `undefined` | CSS text for injection; omission uses packaged CSS. |
+| `cssTarget` | `Document \| ShadowRoot` | `undefined` | Injection target; omission uses `document`. |
+
+### Methods
+
+- `init()` resolves the elements and attaches listeners. It throws if the dialog root cannot be found. It also sets the root's role, modal attribute, and a fallback `tabindex` where applicable.
+- `open({ stylingClass = '' } = {})` removes `hidden`, applies the open classes and ARIA state, locks scroll when enabled, and moves focus inside. `stylingClass` adds one class token for this opening.
+- `close()` applies the closed classes and ARIA state, restores focus to the previously focused element if it is still connected, and unlocks scroll. It sets `hidden` and removes the extra styling class after `hideDelayMs`.
+- `isOpened()` returns the controller's current open state.
+- `destroy()` removes listeners, clears timers, and unlocks scroll. It does not close the dialog or reset its open state.
+
+`open()` and `close()` initialize the controller if needed and ignore calls inside the `debounceMs` window.
+
+### Events
+
+Events are dispatched on the dialog element. They do not bubble. The matching callbacks receive the same detail objects.
+
+| Event | When | Payload (`event.detail`) |
+| --- | --- | --- |
+| `dialog-lite:open` | After the open state and focus are updated. | `{ stylingClass: string }` |
+| `dialog-lite:close` | After the close state is applied, before the delayed `hidden` update. | `{}` |
+
+## Vue 3
+
+`dialog-lite/vue` exports a composable for custom markup and a component that renders the default wrapper. Vue is an optional peer dependency; the main entry does not require it.
+
+### Custom markup
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useDialogLite } from 'dialog-lite/vue'
+import { ref } from 'vue';
+import { useDialogLite } from 'dialog-lite/vue';
+import 'dialog-lite/dialog-lite.css';
 
-const dialogRef = ref<HTMLElement | null>(null)
+const dialogRef = ref<HTMLElement | null>(null);
 const { isOpen, open, close } = useDialogLite(dialogRef, {
   closingBackdrop: true,
-  mainContent: null,
-})
+});
 </script>
 
 <template>
-  <button type="button" @click="open({ stylingClass: 'dialog-lite--result' })">
-    Open
-  </button>
+  <button type="button" @click="open()">Open dialog</button>
+  <p>Dialog open: {{ isOpen }}</p>
 
-  <div ref="dialogRef" class="dialog-lite dialog-lite--out" hidden aria-hidden="true">
+  <div
+    ref="dialogRef"
+    class="dialog-lite dialog-lite--out"
+    hidden
+    aria-hidden="true"
+    aria-label="Example dialog"
+  >
     <div class="dialog-lite__backdrop"></div>
     <div class="dialog-lite__container">
       <div class="dialog-lite__container-inner">
-        <button type="button" @click="close">Close</button>
-        <slot />
+        <button type="button" tabindex="0" @click="close">Close</button>
+        <p>Your content</p>
       </div>
     </div>
   </div>
 </template>
 ```
 
-`useDialogLite()` creates the controller in `onMounted()`, passes the Vue element ref
-to the core `dialog` option, keeps `isOpen` in sync through callbacks, and calls
-`destroy()` automatically when the component scope is disposed.
+`useDialogLite(dialogRef, options?)` accepts an element ref or a function returning an element. It initializes on mount, keeps `isOpen` in sync through callbacks, and destroys the controller when the component scope is disposed.
 
-#### Component
+It returns `dialog`, `isOpen`, `init`, `open`, `close`, and `destroy`. Its options follow the core options, except that the element source supplies `dialog`.
 
-Use `DialogLiteRoot` when you want the package to render the default BEM wrapper.
+### Default wrapper
 
 ```vue
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { DialogLiteRoot } from 'dialog-lite/vue'
+import { ref } from 'vue';
+import { DialogLiteRoot } from 'dialog-lite/vue';
+import 'dialog-lite/dialog-lite.css';
 
-const result = ref<'won' | 'lost' | null>(null)
-const isResultOpen = computed({
-  get: () => result.value !== null,
-  set: (value) => {
-    if (!value) result.value = null
-  },
-})
+const isOpen = ref(false);
 </script>
 
 <template>
-  <DialogLiteRoot
-    v-model="isResultOpen"
-    :styling-class="result === 'won' ? 'dialog-lite--game-won' : 'dialog-lite--game-lost'"
-    close-on-backdrop
-    :main-content="null"
-  >
-    <GameWon v-if="result === 'won'" />
-    <GameLost v-else @reset="isResultOpen = false" />
+  <button type="button" @click="isOpen = true">Open dialog</button>
+
+  <DialogLiteRoot v-model="isOpen" close-on-backdrop aria-label="Example dialog">
+    <button type="button" tabindex="0" @click="isOpen = false">Close</button>
+    <p>Your content</p>
   </DialogLiteRoot>
 </template>
 ```
 
-#### Vue API
+`DialogLiteRoot` controls the core instance through `v-model` and emits `update:modelValue`, `open`, and `close`.
 
-- `useDialogLite(dialogRef, options)` — creates a Vue-scoped controller, initializes it
-  on mount, and destroys it on scope disposal.
-- `DialogLiteRoot` — renders the default BEM markup and controls the core instance
-  through `v-model`.
-- `DialogLiteRoot` props — `modelValue`, `stylingClass`, `closeOnBackdrop`,
-  `closeOnButton`, `mainContent`, `debounceMs`, `hideDelayMs`, `lockScroll`,
-  `trapFocus`, `closeOnEscape`.
-- `DialogLiteRoot` emits — `update:modelValue`, `open`, `close`.
+Its props are `modelValue`, `stylingClass`, `closeOnBackdrop`, `closeOnButton`, `mainContent`, `debounceMs`, `hideDelayMs`, `focusOnOpenSelector`, `lockScroll`, `trapFocus`, `closeOnEscape`, `role`, and `ariaModal`. `modelValue` defaults to `false`, `stylingClass` to `''`, and the two close-on-click props to `false`. Other defaults follow the core options, except `mainContent`, whose Vue prop defaults to `null` and is subject to the fallback described above.
 
-For Nuxt or any SSR setup, import is safe but initialization is client-only. Use the
-composable or component inside mounted/client-rendered code, and wrap rendered dialogs
-in `<ClientOnly>` when the page is server-rendered.
+For Nuxt or another SSR setup, import is safe but initialization is client-only. Use mounted/client-rendered code and wrap rendered dialogs in `<ClientOnly>` when the page is server-rendered.
 
----
+## Styling
 
-### Styling
+Import `dialog-lite/dialog-lite.css` once, as in the examples, or let `initDialogLite()` inject it. From a stylesheet, use:
 
-The default stylesheet is available as a package subpath:
-
-```ts
-import 'dialog-lite/dialog-lite.css'
-```
-
-```scss
+```css
 @import "dialog-lite/dialog-lite.css";
 ```
 
-The default CSS uses BEM classes:
+For Shadow DOM, use `injectDialogLiteCss({ target: shadowRoot })` with your shadow root, or use `dialogLiteCssText` in your own style setup.
 
-- `.dialog-lite`
-- `.dialog-lite--in`
-- `.dialog-lite--out`
-- `.dialog-lite__backdrop`
-- `.dialog-lite__container`
-- `.dialog-lite__container-inner`
-- `.dialog-lite-close-button`
+The default CSS uses `.dialog-lite`, `.dialog-lite--in`, `.dialog-lite--out`, `.dialog-lite__backdrop`, `.dialog-lite__container`, `.dialog-lite__container-inner`, and `.dialog-lite-close-button`.
 
-The backdrop and z-index values can be customized with CSS variables:
+Override these CSS variables to change backdrop colors and stacking:
 
 - `--z-index-dialog-lite`
 - `--z-index-dialog-lite-backdrop`
@@ -222,8 +207,6 @@ The backdrop and z-index values can be customized with CSS variables:
 - `--c-dialog-lite-backdrop-in`
 - `--c-dialog-lite-backdrop-out`
 
----
-
-### License
+## License
 
 MIT
